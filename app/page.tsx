@@ -9,7 +9,7 @@ export default function Home() {
 
   // الحالة الافتراضية
   const [marketData, setMarketData] = useState<any>({
-    world: { gram24: 7180, gram21: 6283, gram18: 5385, ounceUsd: 2233.30 },
+    world: { gram24: 7180, gram21: 6283, gram18: 5385, ounceUsd: 2650.50 },
     egyptMarket: {
       karat24: { price: 7180, buy: 7195, sell: 7166 },
       karat21: { price: 6283, buy: 6295, sell: 6270 },
@@ -27,7 +27,7 @@ export default function Home() {
     ],
   });
 
-  // جلب الأسعار الحية المباشرة من الـ API وتحديث الـState مباشرة
+  // جلب الأسعار الحية المباشرة من الـ API
   useEffect(() => {
     async function fetchLivePrices() {
       try {
@@ -35,7 +35,7 @@ export default function Home() {
         if (res.ok) {
           const liveData = await res.json();
           if (liveData && !liveData.error) {
-            setMarketData(liveData); // تعيين البيانات الحية مباشرة
+            setMarketData(liveData);
           }
         }
       } catch (err) {
@@ -137,7 +137,7 @@ export default function Home() {
                   ${marketData?.world?.ounceUsd}
                 </div>
                 <span className="text-[10px] text-amber-300 block font-semibold">
-                  بورصة المعادن المباشرة
+                  بورصة الدولار المباشرة
                 </span>
               </div>
             </div>
