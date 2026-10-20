@@ -4,45 +4,59 @@ import { useState, useEffect } from "react";
 
 export default function Home() {
   const [amount, setAmount] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(true);
   const [timeString, setTimeString] = useState<string>("مباشر الآن");
 
+  // الحالة الافتراضية
+  const [marketData, setMarketData] = useState<any>({
+    world: { gram24: 7180, gram21: 6283, gram18: 5385, ounceUsd: 2233.30 },
+    egyptMarket: {
+      karat24: { price: 7180, buy: 7195, sell: 7166 },
+      karat21: { price: 6283, buy: 6295, sell: 6270 },
+      karat18: { price: 5385, buy: 5396, sell: 5374 },
+      pound: { price: 50264, buy: 50360, sell: 50160 },
+    },
+    silver: { gram999: 45.0, gram925: 41.5 },
+    currencies: [
+      { name: "الدولار الأمريكي", code: "USD", buy: 53.91, sell: 54.01 },
+      { name: "الريال السعودي", code: "SAR", buy: 14.38, sell: 14.43 },
+      { name: "الدرهم الإماراتي", code: "AED", buy: 14.69, sell: 14.74 },
+      { name: "اليورو", code: "EUR", buy: 58.60, sell: 58.75 },
+      { name: "الجنيه الإسترليني", code: "GBP", buy: 68.24, sell: 68.44 },
+      { name: "الدينار الكويتي", code: "KWD", buy: 173.90, sell: 174.20 },
+    ],
+  });
+
+  // جلب الأسعار الحية المباشرة من الـ API وتحديث الـState مباشرة
   useEffect(() => {
-    setTimeString(new Date().toLocaleTimeString("ar-EG"));
+    async function fetchLivePrices() {
+      try {
+        const res = await fetch("/api/gold", { cache: "no-store" });
+        if (res.ok) {
+          const liveData = await res.json();
+          if (liveData && !liveData.error) {
+            setMarketData(liveData); // تعيين البيانات الحية مباشرة
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch live API prices.", err);
+      } finally {
+        setLoading(false);
+        setTimeString(new Date().toLocaleTimeString("ar-EG"));
+      }
+    }
+
+    fetchLivePrices();
+    const interval = setInterval(fetchLivePrices, 120000);
+    return () => clearInterval(interval);
   }, []);
 
-  const data = {
-    world: {
-      gram24: 3542,
-      gram21: 3100,
-      gram18: 2657,
-      ounceUsd: 2650.50,
-    },
-    egyptMarket: {
-      karat24: { price: 3542, buy: 3520, sell: 3542 },
-      karat21: { price: 3100, buy: 3080, sell: 3100 },
-      karat18: { price: 2657, buy: 2637, sell: 2657 },
-      pound: { price: 24800, buy: 24640, sell: 24800 },
-    },
-    silver: {
-      gram999: 45.0,
-      gram925: 41.5,
-    },
-    currencies: [
-      { name: "الدولار الأمريكي", code: "USD", buy: 48.50, sell: 48.60 },
-      { name: "الريال السعودي", code: "SAR", buy: 12.90, sell: 12.95 },
-      { name: "الدرهم الإماراتي", code: "AED", buy: 13.20, sell: 13.25 },
-      { name: "اليورو", code: "EUR", buy: 52.70, sell: 52.85 },
-      { name: "الجنيه الإسترليني", code: "GBP", buy: 61.40, sell: 61.60 },
-      { name: "الدينار الكويتي", code: "KWD", buy: 157.00, sell: 157.50 },
-    ],
-  };
-
-  const calculatedPrice = amount * data.egyptMarket.karat21.price;
+  const calculatedPrice = amount * (marketData?.egyptMarket?.karat21?.price || 6283);
 
   return (
     <main className="min-h-screen bg-slate-950 text-white text-right selection:bg-amber-500 selection:text-slate-950 font-sans" dir="rtl">
       
-      {/* Navbar */}
+      {/* Header */}
       <header className="border-b border-amber-500/20 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -57,7 +71,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-2 text-xs bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-full font-semibold">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            السوق مباشر
+            {loading ? "جاري التحديث..." : "السوق مباشر لحظياً"}
           </div>
         </div>
       </header>
@@ -110,17 +124,17 @@ export default function Home() {
               <div className="bg-slate-950/80 p-4 rounded-xl border border-amber-500/20 space-y-1">
                 <span className="text-xs text-slate-400 font-medium block">عيار 21 (مصر)</span>
                 <div className="text-2xl md:text-3xl font-black text-amber-400">
-                  {data.egyptMarket.karat21.price} <span className="text-xs font-normal text-slate-300">ج.م</span>
+                  {marketData?.egyptMarket?.karat21?.price} <span className="text-xs font-normal text-slate-300">ج.م</span>
                 </div>
                 <span className="text-[10px] text-emerald-400 block font-semibold">
-                  شراء: {data.egyptMarket.karat21.buy} ج.م
+                  شراء: {marketData?.egyptMarket?.karat21?.buy} ج.م
                 </span>
               </div>
 
               <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 space-y-1">
                 <span className="text-xs text-slate-400 font-medium block">الأونصة عالمياً</span>
                 <div className="text-2xl md:text-3xl font-black text-white">
-                  ${data.world.ounceUsd}
+                  ${marketData?.world?.ounceUsd}
                 </div>
                 <span className="text-[10px] text-amber-300 block font-semibold">
                   بورصة المعادن المباشرة
@@ -131,7 +145,7 @@ export default function Home() {
             <div className="pt-1 flex flex-wrap justify-center md:justify-start gap-3 text-xs text-slate-400">
               <span>🕒 آخر تحديث: {timeString}</span>
               <span>•</span>
-              <span>⚡ المصدر: Tinbo Live Market</span>
+              <span>⚡ المصدر: GoldTimo Live Market</span>
             </div>
           </div>
 
@@ -150,39 +164,39 @@ export default function Home() {
             <div className="md:col-span-2 bg-slate-900 border border-amber-500/30 rounded-2xl p-6 shadow-2xl text-white">
               <h3 className="text-xl font-bold mb-4 text-amber-400 border-b border-slate-800 pb-3 flex justify-between items-center">
                 <span>أسعار الصاغة (شراء وبيع)</span>
-                <span className="text-xs bg-amber-500/20 text-amber-400 px-2.5 py-1 rounded-full">Tinbo Live</span>
+                <span className="text-xs bg-amber-500/20 text-amber-400 px-2.5 py-1 rounded-full">Live Data</span>
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
                   <span>عيار 24</span>
                   <div className="space-x-4 space-x-reverse font-bold">
-                    <span className="text-amber-300">السعر: {data.egyptMarket.karat24.price} ج.م</span>
-                    <span className="text-emerald-400">شراء: {data.egyptMarket.karat24.buy}</span>
-                    <span className="text-rose-400">بيع: {data.egyptMarket.karat24.sell}</span>
+                    <span className="text-amber-300">السعر: {marketData?.egyptMarket?.karat24?.price} ج.م</span>
+                    <span className="text-emerald-400">شراء: {marketData?.egyptMarket?.karat24?.buy}</span>
+                    <span className="text-rose-400">بيع: {marketData?.egyptMarket?.karat24?.sell}</span>
                   </div>
                 </div>
                 <div className="flex justify-between p-3 bg-amber-500/10 rounded-xl border border-amber-500/30 font-bold">
                   <span className="text-amber-400">عيار 21 (الأكثر مبيعاً)</span>
                   <div className="space-x-4 space-x-reverse">
-                    <span className="text-amber-300">السعر: {data.egyptMarket.karat21.price} ج.م</span>
-                    <span className="text-emerald-400">شراء: {data.egyptMarket.karat21.buy}</span>
-                    <span className="text-rose-400">بيع: {data.egyptMarket.karat21.sell}</span>
+                    <span className="text-amber-300">السعر: {marketData?.egyptMarket?.karat21?.price} ج.م</span>
+                    <span className="text-emerald-400">شراء: {marketData?.egyptMarket?.karat21?.buy}</span>
+                    <span className="text-rose-400">بيع: {marketData?.egyptMarket?.karat21?.sell}</span>
                   </div>
                 </div>
                 <div className="flex justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
                   <span>عيار 18</span>
                   <div className="space-x-4 space-x-reverse font-bold">
-                    <span className="text-amber-300">السعر: {data.egyptMarket.karat18.price} ج.م</span>
-                    <span className="text-emerald-400">شراء: {data.egyptMarket.karat18.buy}</span>
-                    <span className="text-rose-400">بيع: {data.egyptMarket.karat18.sell}</span>
+                    <span className="text-amber-300">السعر: {marketData?.egyptMarket?.karat18?.price} ج.م</span>
+                    <span className="text-emerald-400">شراء: {marketData?.egyptMarket?.karat18?.buy}</span>
+                    <span className="text-rose-400">بيع: {marketData?.egyptMarket?.karat18?.sell}</span>
                   </div>
                 </div>
                 <div className="flex justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
                   <span>الجنيه الذهب (8 جرام)</span>
                   <div className="space-x-4 space-x-reverse font-bold">
-                    <span className="text-amber-300">السعر: {data.egyptMarket.pound.price} ج.م</span>
-                    <span className="text-emerald-400">شراء: {data.egyptMarket.pound.buy}</span>
-                    <span className="text-rose-400">بيع: {data.egyptMarket.pound.sell}</span>
+                    <span className="text-amber-300">السعر: {marketData?.egyptMarket?.pound?.price} ج.م</span>
+                    <span className="text-emerald-400">شراء: {marketData?.egyptMarket?.pound?.buy}</span>
+                    <span className="text-rose-400">بيع: {marketData?.egyptMarket?.pound?.sell}</span>
                   </div>
                 </div>
               </div>
@@ -196,19 +210,19 @@ export default function Home() {
                 <div className="space-y-3">
                   <div className="flex justify-between bg-slate-950 p-3 rounded-xl border border-slate-800">
                     <span className="text-slate-400">أونصة الذهب عالمياً</span>
-                    <span className="font-bold text-amber-400">${data.world.ounceUsd}</span>
+                    <span className="font-bold text-amber-400">${marketData?.world?.ounceUsd}</span>
                   </div>
                   <div className="flex justify-between bg-slate-950 p-3 rounded-xl border border-slate-800">
                     <span className="text-slate-400">جرام 24 (عالمي محسوب)</span>
-                    <span className="font-bold text-amber-400">{Math.round(data.world.gram24)} ج.م</span>
+                    <span className="font-bold text-amber-400">{Math.round(marketData?.world?.gram24 || 0)} ج.م</span>
                   </div>
                   <div className="flex justify-between bg-slate-950 p-3 rounded-xl border border-slate-800">
                     <span className="text-slate-400">فضة عيار 999</span>
-                    <span className="font-bold text-slate-200">{data.silver.gram999} ج.م</span>
+                    <span className="font-bold text-slate-200">{marketData?.silver?.gram999} ج.م</span>
                   </div>
                   <div className="flex justify-between bg-slate-950 p-3 rounded-xl border border-slate-800">
                     <span className="text-slate-400">فضة عيار 925</span>
-                    <span className="font-bold text-slate-200">{data.silver.gram925} ج.م</span>
+                    <span className="font-bold text-slate-200">{marketData?.silver?.gram925} ج.م</span>
                   </div>
                 </div>
               </div>
@@ -223,7 +237,7 @@ export default function Home() {
             أسعار العملات الأجنبية والعربية مقابل الجنيه المصري
           </h2>
           <div className="grid md:grid-cols-3 gap-4">
-            {data.currencies.map((curr) => (
+            {marketData?.currencies?.map((curr: any) => (
               <div key={curr.code} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
                 <div>
                   <span className="font-bold text-white block">{curr.name}</span>
