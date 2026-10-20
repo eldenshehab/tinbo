@@ -3,12 +3,88 @@ import Header from "@/components/Header";
 import GoldCalculator from "@/components/GoldCalculator";
 import AdBanner from "@/components/AdBanner";
 
+// جلب البيانات مباشرة على مستوى الخادم دون الحاجة لطلب HTTP محلي
 async function getData() {
-  const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000";
   try {
-    const res = await fetch(`${baseUrl}/api/gold`, { cache: "no-store" });
-    if (!res.ok) return null;
-    return res.json();
+    const TROY_OUNCE_GRAMS = 31.1034768;
+    const apiKey = process.env.GOLDTIMO_API_KEY;
+
+    let gram24 = 7200;
+    let gram21 = 6300;
+    let gram18 = 5400;
+    let buy21 = 6270;
+    let sell21 = 6300;
+
+    if (apiKey) {
+      try {
+        const res = await fetch("https://goldtimo.com/api/v1/price/XAU/EGP/21", {
+          headers: { "x-api-key": apiKey },
+          next: { revalidate: 120 },
+        });
+        if (res.ok) {
+          const goldData = await res.json();
+          if (goldData.gram) gram21 = goldData.gram;
+          if (goldData.gramBuy) buy21 = goldData.gramBuy;
+          if (goldData.gramSell) sell21 = goldData.gramSell;
+          gram24 = Math.round(gram21 * (24 / 21));
+          gram18 = Math.round(gram21 * (18 / 21));
+        }
+      } catch {}
+    }
+
+    let usdRate = 50.25;
+    try {
+      const resCurrencies = await fetch("https://open.er-api.com/v6/latest/USD", {
+        next: { revalidate: 3600 },
+      });
+      const currencyData = await resCurrencies.json();
+      if (currencyData?.rates?.EGP) {
+        usdRate = currencyData.rates.EGP;
+      }
+    } catch {}
+
+    const ounceEgp = gram24 * TROY_OUNCE_GRAMS;
+    const ounceUsd = Number((ounceEgp / usdRate).toFixed(2));
+
+    const sarRate = usdRate / 3.75;
+    const aedRate = usdRate / 3.67;
+    const eurRate = usdRate / 0.92;
+    const gbpRate = usdRate / 0.79;
+    const kwdRate = usdRate / 0.31;
+
+    return {
+      currency: "EGP",
+      world: {
+        gram24,
+        gram21,
+        gram18,
+        ounceUsd,
+        ounceEgp: Math.round(ounceEgp),
+      },
+      egyptMarket: {
+        karat24: { price: gram24, buy: Math.round(gram24 * 0.995), sell: gram24 },
+        karat21: { price: gram21, buy: buy21, sell: sell21 },
+        karat18: { price: gram18, buy: Math.round(gram18 * 0.995), sell: gram18 },
+        pound: {
+          price: gram21 * 8,
+          buy: buy21 * 8,
+          sell: sell21 * 8,
+        },
+      },
+      silver: {
+        gram999: 105.0,
+        gram925: 97.12,
+      },
+      currencies: [
+        { name: "الدولار الأمريكي", code: "USD", buy: Number(usdRate.toFixed(2)), sell: Number((usdRate + 0.10).toFixed(2)) },
+        { name: "الريال السعودي", code: "SAR", buy: Number(sarRate.toFixed(2)), sell: Number((sarRate + 0.05).toFixed(2)) },
+        { name: "الدرهم الإماراتي", code: "AED", buy: Number(aedRate.toFixed(2)), sell: Number((aedRate + 0.05).toFixed(2)) },
+        { name: "اليورو", code: "EUR", buy: Number(eurRate.toFixed(2)), sell: Number((eurRate + 0.15).toFixed(2)) },
+        { name: "الجنيه الإسترليني", code: "GBP", buy: Number(gbpRate.toFixed(2)), sell: Number((gbpRate + 0.20).toFixed(2)) },
+        { name: "الدينار الكويتي", code: "KWD", buy: Number(kwdRate.toFixed(2)), sell: Number((kwdRate + 0.30).toFixed(2)) },
+      ],
+      fetchedAt: new Date().toISOString(),
+    };
   } catch {
     return null;
   }
@@ -27,11 +103,11 @@ async function MainContent() {
 
   return (
     <>
-      {/* قسم الواجهة الفاخر (Hero Section) - شعار 3D بدون الكلمة العربية */}
+      {/* قسم الواجهة الفاخر (Hero Section) */}
       <div className="relative w-full bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-b border-amber-500/20 py-12 px-4 overflow-hidden">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 items-center">
           
-          {/* شعار / درع تينبو الـ 3D الفاخر (بدون الكلمة العربية) */}
+          {/* شعار تينبو الفاخر */}
           <div className="flex flex-col justify-center items-center">
             <div className="relative group cursor-pointer">
               <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 to-yellow-300 rounded-full blur-xl opacity-30 group-hover:opacity-60 transition duration-500"></div>
@@ -49,7 +125,6 @@ async function MainContent() {
                     </div>
                   </div>
 
-                  {/* تم إزالة كلمة تينبو العربية والاعتماد على اللاتينية الفاخرة فقط */}
                   <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 tracking-widest mt-2">
                     TINBO
                   </h2>
@@ -66,7 +141,7 @@ async function MainContent() {
             </div>
           </div>
 
-          {/* كارت السعر الحي والمباشر العريض */}
+          {/* كارت السعر الحي */}
           <div className="text-center md:text-right space-y-5">
             <div className="inline-flex items-center gap-2 bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold px-4 py-1.5 rounded-full">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
@@ -92,7 +167,7 @@ async function MainContent() {
               <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 space-y-1">
                 <span className="text-xs text-slate-400 font-medium block">الأونصة عالمياً</span>
                 <div className="text-2xl md:text-3xl font-black text-white">
-                  \${data.world.ounceUsd}
+                  ${data.world.ounceUsd}
                 </div>
                 <span className="text-[10px] text-amber-300 block font-semibold">
                   بورصة المعادن المباشرة
@@ -171,7 +246,7 @@ async function MainContent() {
                 <div className="space-y-3">
                   <div className="flex justify-between bg-slate-950 p-3 rounded-xl border border-slate-800">
                     <span className="text-slate-400">أونصة الذهب عالمياً</span>
-                    <span className="font-bold text-amber-400">\${data.world.ounceUsd}</span>
+                    <span className="font-bold text-amber-400">${data.world.ounceUsd}</span>
                   </div>
                   <div className="flex justify-between bg-slate-950 p-3 rounded-xl border border-slate-800">
                     <span className="text-slate-400">جرام 24 (عالمي محسوب)</span>
