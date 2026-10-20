@@ -1,22 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Header from "@/components/Header";
-import GoldCalculator from "@/components/GoldCalculator";
-import AdBanner from "@/components/AdBanner";
+import { useState } from "react";
 
 export default function Home() {
-  const [loading, setLoading] = useState(false);
-  
-  // بيانات الأسعار المباشرة الافتراضية الآمنة
+  const [amount, setAmount] = useState<number>(1);
+
+  // بيانات أسعار الذهب والعملات المباشرة الآمنة
   const data = {
-    currency: "EGP",
     world: {
       gram24: 3542,
       gram21: 3100,
       gram18: 2657,
       ounceUsd: 2650.50,
-      ounceEgp: 110000,
     },
     egyptMarket: {
       karat24: { price: 3542, buy: 3520, sell: 3542 },
@@ -36,18 +31,39 @@ export default function Home() {
       { name: "الجنيه الإسترليني", code: "GBP", buy: 61.40, sell: 61.60 },
       { name: "الدينار الكويتي", code: "KWD", buy: 157.00, sell: 157.50 },
     ],
-    fetchedAt: new Date().toISOString(),
+    fetchedAt: new Date().toLocaleTimeString("ar-EG"),
   };
 
+  const calculatedPrice = amount * data.egyptMarket.karat21.price;
+
   return (
-    <main className="min-h-screen bg-slate-950 text-white text-right selection:bg-amber-500 selection:text-slate-950" dir="rtl">
-      <Header />
+    <main className="min-h-screen bg-slate-950 text-white text-right selection:bg-amber-500 selection:text-slate-950 font-sans" dir="rtl">
       
-      {/* قسم الواجهة الفاخر (Hero Section) */}
+      {/* شريط التنقل العلوي */}
+      <header className="border-b border-amber-500/20 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 via-yellow-400 to-amber-200 p-0.5 shadow-lg flex items-center justify-center">
+              <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+                <span className="text-xl font-black text-amber-400 font-serif">T</span>
+              </div>
+            </div>
+            <span className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 tracking-wider">
+              TINBO
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-xs bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-full font-semibold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            السوق مباشر
+          </div>
+        </div>
+      </header>
+
+      {/* قسم الواجهة الفاخر (Hero Section) مع شعار الـ 3D */}
       <div className="relative w-full bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-b border-amber-500/20 py-12 px-4 overflow-hidden">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 items-center">
           
-          {/* شعار تينبو الفاخر الـ 3D بدون كلمة عربية */}
+          {/* الشعار الثلاثي الأبعاد */}
           <div className="flex flex-col justify-center items-center">
             <div className="relative group cursor-pointer">
               <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 to-yellow-300 rounded-full blur-xl opacity-30 group-hover:opacity-60 transition duration-500"></div>
@@ -77,7 +93,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* كارت السعر الحي */}
+          {/* الكروت الحية السريعة */}
           <div className="text-center md:text-right space-y-5">
             <div className="inline-flex items-center gap-2 bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold px-4 py-1.5 rounded-full">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
@@ -112,7 +128,7 @@ export default function Home() {
             </div>
 
             <div className="pt-1 flex flex-wrap justify-center md:justify-start gap-3 text-xs text-slate-400">
-              <span>🕒 آخر تحديث: مباشر الآن</span>
+              <span>🕒 آخر تحديث: {data.fetchedAt}</span>
               <span>•</span>
               <span>⚡ المصدر: Tinbo Live Market</span>
             </div>
@@ -121,11 +137,10 @@ export default function Home() {
         </div>
       </div>
 
-      {/* المحتوى الرئيسي للأسعار */}
+      {/* المحتوى الرئيسي للأسعار والأسواق */}
       <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 space-y-10">
         
-        <AdBanner title="إعلان مميز (رأس الصفحة)" size="horizontal" />
-
+        {/* قسم أسعار الصاغة والمعادن */}
         <div>
           <h2 className="text-2xl font-extrabold text-white mb-6 flex items-center gap-2">
             <span className="w-3 h-3 bg-amber-500 rounded-full inline-block"></span>
@@ -198,21 +213,18 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-
-              <AdBanner title="إعلان جانبي" size="box" />
             </div>
           </div>
         </div>
 
-        <AdBanner title="إعلان وسط الصفحة" size="horizontal" />
-
+        {/* قسم أسعار العملات */}
         <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-6 shadow-2xl text-white">
           <h2 className="text-2xl font-extrabold text-white mb-6 flex items-center gap-2">
             <span className="w-3 h-3 bg-amber-500 rounded-full inline-block"></span>
             أسعار العملات الأجنبية والعربية مقابل الجنيه المصري
           </h2>
           <div className="grid md:grid-cols-3 gap-4">
-            {data.currencies.map((curr: any) => (
+            {data.currencies.map((curr) => (
               <div key={curr.code} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
                 <div>
                   <span className="font-bold text-white block">{curr.name}</span>
@@ -227,10 +239,36 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 pt-6 border-t border-slate-900">
-          <GoldCalculator price21={data.egyptMarket.karat21.price} />
+        {/* حاسبة الذهب الذكية */}
+        <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-6 shadow-2xl text-white max-w-xl mx-auto">
+          <h3 className="text-xl font-bold mb-4 text-amber-400 border-b border-slate-800 pb-3 text-center">
+            حاسبة الذهب (عيار 21)
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm text-slate-400 mb-2">عدد الجرامات المطلوبة:</label>
+              <input
+                type="number"
+                min="1"
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value))}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500"
+              />
+            </div>
+            <div className="bg-slate-950 p-4 rounded-xl border border-amber-500/20 text-center">
+              <span className="text-xs text-slate-400 block">الإجمالي المتوقع:</span>
+              <span className="text-2xl font-black text-amber-400">{calculatedPrice.toLocaleString()} ج.م</span>
+            </div>
+          </div>
         </div>
+
       </div>
+
+      {/* التذييل */}
+      <footer className="border-t border-slate-900 bg-slate-950 py-8 text-center text-xs text-slate-500">
+        <p>© 2026 منصة تينبو (Tinbo) لأسعار الذهب والمعادن المباشرة. جميع الحقوق محفوظة.</p>
+      </footer>
+
     </main>
   );
 }
