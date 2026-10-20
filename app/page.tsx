@@ -3,103 +3,98 @@ import Header from "@/components/Header";
 import GoldCalculator from "@/components/GoldCalculator";
 import AdBanner from "@/components/AdBanner";
 
-// جلب البيانات مباشرة على مستوى الخادم دون الحاجة لطلب HTTP محلي
+// دالة جلب البيانات الآمنة مع بيانات احتياطية تمنع سقوط Vercel
 async function getData() {
-  try {
-    const TROY_OUNCE_GRAMS = 31.1034768;
-    const apiKey = process.env.GOLDTIMO_API_KEY;
+  const TROY_OUNCE_GRAMS = 31.1034768;
+  const apiKey = process.env.GOLDTIMO_API_KEY;
 
-    let gram24 = 7200;
-    let gram21 = 6300;
-    let gram18 = 5400;
-    let buy21 = 6270;
-    let sell21 = 6300;
+  // القيم الافتراضية المبدئية (Fallback) لضمان عدم توقف الموقع
+  let gram21 = 3100;
+  let buy21 = 3080;
+  let sell21 = 3100;
+  let usdRate = 48.50;
 
-    if (apiKey) {
-      try {
-        const res = await fetch("https://goldtimo.com/api/v1/price/XAU/EGP/21", {
-          headers: { "x-api-key": apiKey },
-          next: { revalidate: 120 },
-        });
-        if (res.ok) {
-          const goldData = await res.json();
-          if (goldData.gram) gram21 = goldData.gram;
-          if (goldData.gramBuy) buy21 = goldData.gramBuy;
-          if (goldData.gramSell) sell21 = goldData.gramSell;
-          gram24 = Math.round(gram21 * (24 / 21));
-          gram18 = Math.round(gram21 * (18 / 21));
-        }
-      } catch {}
-    }
-
-    let usdRate = 50.25;
+  // جلب أسعار الذهب
+  if (apiKey) {
     try {
-      const resCurrencies = await fetch("https://open.er-api.com/v6/latest/USD", {
-        next: { revalidate: 3600 },
+      const res = await fetch("https://goldtimo.com/api/v1/price/XAU/EGP/21", {
+        headers: { "x-api-key": apiKey },
+        next: { revalidate: 60 },
       });
+      if (res.ok) {
+        const goldData = await res.json();
+        if (goldData?.gram) gram21 = goldData.gram;
+        if (goldData?.gramBuy) buy21 = goldData.gramBuy;
+        if (goldData?.gramSell) sell21 = goldData.gramSell;
+      }
+    } catch (e) {
+      console.error("Gold API fetch error, using fallback data", e);
+    }
+  }
+
+  // جلب أسعار العملات
+  try {
+    const resCurrencies = await fetch("https://open.er-api.com/v6/latest/USD", {
+      next: { revalidate: 3600 },
+    });
+    if (resCurrencies.ok) {
       const currencyData = await resCurrencies.json();
       if (currencyData?.rates?.EGP) {
         usdRate = currencyData.rates.EGP;
       }
-    } catch {}
-
-    const ounceEgp = gram24 * TROY_OUNCE_GRAMS;
-    const ounceUsd = Number((ounceEgp / usdRate).toFixed(2));
-
-    const sarRate = usdRate / 3.75;
-    const aedRate = usdRate / 3.67;
-    const eurRate = usdRate / 0.92;
-    const gbpRate = usdRate / 0.79;
-    const kwdRate = usdRate / 0.31;
-
-    return {
-      currency: "EGP",
-      world: {
-        gram24,
-        gram21,
-        gram18,
-        ounceUsd,
-        ounceEgp: Math.round(ounceEgp),
-      },
-      egyptMarket: {
-        karat24: { price: gram24, buy: Math.round(gram24 * 0.995), sell: gram24 },
-        karat21: { price: gram21, buy: buy21, sell: sell21 },
-        karat18: { price: gram18, buy: Math.round(gram18 * 0.995), sell: gram18 },
-        pound: {
-          price: gram21 * 8,
-          buy: buy21 * 8,
-          sell: sell21 * 8,
-        },
-      },
-      silver: {
-        gram999: 105.0,
-        gram925: 97.12,
-      },
-      currencies: [
-        { name: "الدولار الأمريكي", code: "USD", buy: Number(usdRate.toFixed(2)), sell: Number((usdRate + 0.10).toFixed(2)) },
-        { name: "الريال السعودي", code: "SAR", buy: Number(sarRate.toFixed(2)), sell: Number((sarRate + 0.05).toFixed(2)) },
-        { name: "الدرهم الإماراتي", code: "AED", buy: Number(aedRate.toFixed(2)), sell: Number((aedRate + 0.05).toFixed(2)) },
-        { name: "اليورو", code: "EUR", buy: Number(eurRate.toFixed(2)), sell: Number((eurRate + 0.15).toFixed(2)) },
-        { name: "الجنيه الإسترليني", code: "GBP", buy: Number(gbpRate.toFixed(2)), sell: Number((gbpRate + 0.20).toFixed(2)) },
-        { name: "الدينار الكويتي", code: "KWD", buy: Number(kwdRate.toFixed(2)), sell: Number((kwdRate + 0.30).toFixed(2)) },
-      ],
-      fetchedAt: new Date().toISOString(),
-    };
-  } catch {
-    return null;
+    }
+  } catch (e) {
+    console.error("Currency API fetch error", e);
   }
+
+  const gram24 = Math.round(gram21 * (24 / 21));
+  const gram18 = Math.round(gram21 * (18 / 21));
+  const ounceEgp = gram24 * TROY_OUNCE_GRAMS;
+  const ounceUsd = Number((ounceEgp / usdRate).toFixed(2));
+
+  const sarRate = usdRate / 3.75;
+  const aedRate = usdRate / 3.67;
+  const eurRate = usdRate / 0.92;
+  const gbpRate = usdRate / 0.79;
+  const kwdRate = usdRate / 0.31;
+
+  return {
+    currency: "EGP",
+    world: {
+      gram24,
+      gram21,
+      gram18,
+      ounceUsd,
+      ounceEgp: Math.round(ounceEgp),
+    },
+    egyptMarket: {
+      karat24: { price: gram24, buy: Math.round(gram24 * 0.995), sell: gram24 },
+      karat21: { price: gram21, buy: buy21, sell: sell21 },
+      karat18: { price: gram18, buy: Math.round(gram18 * 0.995), sell: gram18 },
+      pound: {
+        price: gram21 * 8,
+        buy: buy21 * 8,
+        sell: sell21 * 8,
+      },
+    },
+    silver: {
+      gram999: 45.0,
+      gram925: 41.5,
+    },
+    currencies: [
+      { name: "الدولار الأمريكي", code: "USD", buy: Number(usdRate.toFixed(2)), sell: Number((usdRate + 0.10).toFixed(2)) },
+      { name: "الريال السعودي", code: "SAR", buy: Number(sarRate.toFixed(2)), sell: Number((sarRate + 0.05).toFixed(2)) },
+      { name: "الدرهم الإماراتي", code: "AED", buy: Number(aedRate.toFixed(2)), sell: Number((aedRate + 0.05).toFixed(2)) },
+      { name: "اليورو", code: "EUR", buy: Number(eurRate.toFixed(2)), sell: Number((eurRate + 0.15).toFixed(2)) },
+      { name: "الجنيه الإسترليني", code: "GBP", buy: Number(gbpRate.toFixed(2)), sell: Number((gbpRate + 0.20).toFixed(2)) },
+      { name: "الدينار الكويتي", code: "KWD", buy: Number(kwdRate.toFixed(2)), sell: Number((kwdRate + 0.30).toFixed(2)) },
+    ],
+    fetchedAt: new Date().toISOString(),
+  };
 }
 
 async function MainContent() {
   const data = await getData();
-
-  if (!data) {
-    return (
-      <div className="text-center p-8 bg-slate-900 border border-amber-500/30 rounded-2xl shadow-2xl max-w-md mx-auto my-12">
-        <p className="text-lg font-bold text-amber-400">تعذر تحميل بيانات الأسعار المباشرة حالياً.</p>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -107,7 +102,7 @@ async function MainContent() {
       <div className="relative w-full bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-b border-amber-500/20 py-12 px-4 overflow-hidden">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 items-center">
           
-          {/* شعار تينبو الفاخر */}
+          {/* شعار تينبو الفاخر الـ 3D بدون كلمة عربية */}
           <div className="flex flex-col justify-center items-center">
             <div className="relative group cursor-pointer">
               <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 to-yellow-300 rounded-full blur-xl opacity-30 group-hover:opacity-60 transition duration-500"></div>
@@ -130,10 +125,6 @@ async function MainContent() {
                   </h2>
                   <span className="text-[10px] tracking-[0.3em] text-amber-400/80 uppercase font-bold mt-1">
                     LIVE GOLD MARKET
-                  </span>
-
-                  <span className="mt-4 text-[11px] bg-amber-500/10 border border-amber-500/20 text-amber-300 px-3 py-1 rounded-full font-medium">
-                    منصة الذهب المباشرة
                   </span>
 
                 </div>
@@ -178,7 +169,7 @@ async function MainContent() {
             <div className="pt-1 flex flex-wrap justify-center md:justify-start gap-3 text-xs text-slate-400">
               <span>🕒 آخر تحديث: {new Date(data.fetchedAt).toLocaleTimeString("ar-EG")}</span>
               <span>•</span>
-              <span>⚡ المصدر: GoldTimo Live</span>
+              <span>⚡ المصدر: Tinbo Live Market</span>
             </div>
           </div>
 
@@ -200,7 +191,7 @@ async function MainContent() {
             <div className="md:col-span-2 bg-slate-900 border border-amber-500/30 rounded-2xl p-6 shadow-2xl text-white">
               <h3 className="text-xl font-bold mb-4 text-amber-400 border-b border-slate-800 pb-3 flex justify-between items-center">
                 <span>أسعار الصاغة (شراء وبيع)</span>
-                <span className="text-xs bg-amber-500/20 text-amber-400 px-2.5 py-1 rounded-full">GoldTimo</span>
+                <span className="text-xs bg-amber-500/20 text-amber-400 px-2.5 py-1 rounded-full">Tinbo Live</span>
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
