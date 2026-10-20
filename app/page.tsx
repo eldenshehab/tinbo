@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Home() {
   const [amount, setAmount] = useState<number>(1);
+  const [timeString, setTimeString] = useState<string>("مباشر الآن");
 
-  // بيانات أسعار الذهب والعملات المباشرة الآمنة
+  useEffect(() => {
+    setTimeString(new Date().toLocaleTimeString("ar-EG"));
+  }, []);
+
   const data = {
     world: {
       gram24: 3542,
@@ -31,7 +35,6 @@ export default function Home() {
       { name: "الجنيه الإسترليني", code: "GBP", buy: 61.40, sell: 61.60 },
       { name: "الدينار الكويتي", code: "KWD", buy: 157.00, sell: 157.50 },
     ],
-    fetchedAt: new Date().toLocaleTimeString("ar-EG"),
   };
 
   const calculatedPrice = amount * data.egyptMarket.karat21.price;
@@ -39,7 +42,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950 text-white text-right selection:bg-amber-500 selection:text-slate-950 font-sans" dir="rtl">
       
-      {/* شريط التنقل العلوي */}
+      {/* Navbar */}
       <header className="border-b border-amber-500/20 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -59,11 +62,10 @@ export default function Home() {
         </div>
       </header>
 
-      {/* قسم الواجهة الفاخر (Hero Section) مع شعار الـ 3D */}
+      {/* Hero Section */}
       <div className="relative w-full bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-b border-amber-500/20 py-12 px-4 overflow-hidden">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 items-center">
           
-          {/* الشعار الثلاثي الأبعاد */}
           <div className="flex flex-col justify-center items-center">
             <div className="relative group cursor-pointer">
               <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 to-yellow-300 rounded-full blur-xl opacity-30 group-hover:opacity-60 transition duration-500"></div>
@@ -93,7 +95,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* الكروت الحية السريعة */}
           <div className="text-center md:text-right space-y-5">
             <div className="inline-flex items-center gap-2 bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold px-4 py-1.5 rounded-full">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
@@ -128,7 +129,7 @@ export default function Home() {
             </div>
 
             <div className="pt-1 flex flex-wrap justify-center md:justify-start gap-3 text-xs text-slate-400">
-              <span>🕒 آخر تحديث: {data.fetchedAt}</span>
+              <span>🕒 آخر تحديث: {timeString}</span>
               <span>•</span>
               <span>⚡ المصدر: Tinbo Live Market</span>
             </div>
@@ -137,10 +138,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* المحتوى الرئيسي للأسعار والأسواق */}
+      {/* Main Content */}
       <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 space-y-10">
-        
-        {/* قسم أسعار الصاغة والمعادن */}
         <div>
           <h2 className="text-2xl font-extrabold text-white mb-6 flex items-center gap-2">
             <span className="w-3 h-3 bg-amber-500 rounded-full inline-block"></span>
@@ -217,7 +216,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* قسم أسعار العملات */}
+        {/* Currencies */}
         <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-6 shadow-2xl text-white">
           <h2 className="text-2xl font-extrabold text-white mb-6 flex items-center gap-2">
             <span className="w-3 h-3 bg-amber-500 rounded-full inline-block"></span>
@@ -239,7 +238,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* حاسبة الذهب الذكية */}
+        {/* Calculator */}
         <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-6 shadow-2xl text-white max-w-xl mx-auto">
           <h3 className="text-xl font-bold mb-4 text-amber-400 border-b border-slate-800 pb-3 text-center">
             حاسبة الذهب (عيار 21)
@@ -264,7 +263,6 @@ export default function Home() {
 
       </div>
 
-      {/* التذييل */}
       <footer className="border-t border-slate-900 bg-slate-950 py-8 text-center text-xs text-slate-500">
         <p>© 2026 منصة تينبو (Tinbo) لأسعار الذهب والمعادن المباشرة. جميع الحقوق محفوظة.</p>
       </footer>
