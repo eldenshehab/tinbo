@@ -34,11 +34,10 @@ async function getGoldPrice(karat?: number): Promise<GoldApiResponse> {
 
     return response.json();
   } catch (error) {
-    // قيم احتياطية آمنة تمنع فشل البناء أو الموقع في حال عدم الاتصال المباشر
     if (karat === 24) return { gram: 3542, gramBuy: 3520, gramSell: 3542 };
     if (karat === 21) return { gram: 3100, gramBuy: 3080, gramSell: 3100 };
     if (karat === 18) return { gram: 2657, gramBuy: 2637, gramSell: 2657 };
-    return { price: 2650.50 * TROY_OUNCE_GRAMS };
+    return { price: 2650.5 * TROY_OUNCE_GRAMS };
   }
 }
 
@@ -78,6 +77,12 @@ export async function GET() {
       ? world.price / TROY_OUNCE_GRAMS
       : 3542;
 
+    // حساب سعر الأونصة بالدولار الأمريكي بشكل صحيح (سعر جرام 24 عالمياً * 31.1035 / سعر الدولار)
+    const rawOunceEgp = worldGram24 * TROY_OUNCE_GRAMS;
+    const calculateOunceUsd = validNumber(rawOunceEgp) && usdRate > 0
+      ? Number((rawOunceEgp / usdRate).toFixed(2))
+      : 2650.5;
+
     const formatKarat = (data: GoldApiResponse) => ({
       price: data.gram ?? 3100,
       buy: validNumber(data.gramBuy) ? data.gramBuy : Math.round((data.gram ?? 3100) * 0.995),
@@ -99,9 +104,7 @@ export async function GET() {
           gram24: Math.round(worldGram24),
           gram21: Math.round(worldGram24 * (21 / 24)),
           gram18: Math.round(worldGram24 * (18 / 24)),
-          ounceUsd: validNumber(world.price)
-            ? Number(world.price.toFixed(2))
-            : 2650.5,
+          ounceUsd: calculateOunceUsd, // سعر الأونصة بالدولار بشكل دقيق
           updatedAt: world.updatedAt ?? null,
         },
         egyptMarket: {
