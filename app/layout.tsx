@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     "سعر أونصة الذهب بالدولار",
   ],
   other: {
-    "google-adsense-account" content="ca-pub-5254909861669174",
+    "google-adsense-account": "ca-pub-5254909861669174",
   },
 };
 
