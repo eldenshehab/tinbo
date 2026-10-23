@@ -34,9 +34,10 @@ async function getGoldPrice(karat?: number): Promise<GoldApiResponse> {
 
     return await response.json();
   } catch (error) {
-    if (karat === 24) return { gram: 3542, gramBuy: 3520, gramSell: 3542 };
-    if (karat === 21) return { gram: 3100, gramBuy: 3080, gramSell: 3100 };
-    if (karat === 18) return { gram: 2657, gramBuy: 2637, gramSell: 2657 };
+    // أسعار احتياطية واقعية ومحدثة تتطابق مع السوق الحالي
+    if (karat === 24) return { gram: 7180, gramBuy: 7195, gramSell: 7166 };
+    if (karat === 21) return { gram: 6283, gramBuy: 6295, gramSell: 6270 };
+    if (karat === 18) return { gram: 5385, gramBuy: 5396, gramSell: 5374 };
     return { price: 2650.5 * TROY_OUNCE_GRAMS };
   }
 }
@@ -54,7 +55,7 @@ export async function GET() {
       getGoldPrice(18),
     ]);
 
-    let usdRate = 48.5;
+    let usdRate = 53.91; // سعر صرف واقعي ومحدث للدولار
     try {
       const resCurrencies = await fetch(
         "https://open.er-api.com/v6/latest/USD",
@@ -68,14 +69,14 @@ export async function GET() {
         if (cData?.rates?.EGP) usdRate = cData.rates.EGP;
       }
     } catch (e) {
-      // تجاوز أي خطأ مؤقت للعملات
+      // استخدام القيمة الافتراضية للعملات عند تعذر الاتصال
     }
 
     const worldGram24 = validNumber(world.gram)
       ? world.gram
       : validNumber(world.price)
       ? world.price / TROY_OUNCE_GRAMS
-      : 3542;
+      : 7180;
 
     const rawOunceEgp = worldGram24 * TROY_OUNCE_GRAMS;
     const calculateOunceUsd =
@@ -84,11 +85,11 @@ export async function GET() {
         : 2650.5;
 
     const formatKarat = (data: GoldApiResponse) => ({
-      price: data.gram ?? 3100,
+      price: data.gram ?? 6283,
       buy: validNumber(data.gramBuy)
         ? data.gramBuy
-        : Math.round((data.gram ?? 3100) * 0.995),
-      sell: validNumber(data.gramSell) ? data.gramSell : data.gram ?? 3100,
+        : Math.round((data.gram ?? 6283) * 1.002),
+      sell: validNumber(data.gramSell) ? data.gramSell : (data.gram ?? 6283) * 0.995,
       updatedAt: data.updatedAt ?? null,
     });
 
@@ -114,15 +115,9 @@ export async function GET() {
           karat21: formatKarat(karat21),
           karat18: formatKarat(karat18),
           pound: {
-            price: (karat21.gram ?? 3100) * 8,
-            buy:
-              (validNumber(karat21.gramBuy)
-                ? karat21.gramBuy
-                : (karat21.gram ?? 3100) * 0.995) * 8,
-            sell:
-              (validNumber(karat21.gramSell)
-                ? karat21.gramSell
-                : karat21.gram ?? 3100) * 8,
+            price: (karat21.gram ?? 6283) * 8,
+            buy: ((karat21.gramBuy ?? 6295)) * 8,
+            sell: ((karat21.gramSell ?? 6270)) * 8,
           },
         },
         currencies: [
