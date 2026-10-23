@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 const BASE_URL = "https://goldtimo.com/api/v1";
 const TROY_OUNCE_GRAMS = 31.1034768;
 
@@ -32,7 +34,7 @@ async function getGoldPrice(karat?: number): Promise<GoldApiResponse> {
       throw new Error(`Gold provider returned ${response.status}`);
     }
 
-    return response.json();
+    return await response.json();
   } catch (error) {
     if (karat === 24) return { gram: 3542, gramBuy: 3520, gramSell: 3542 };
     if (karat === 21) return { gram: 3100, gramBuy: 3080, gramSell: 3100 };
@@ -68,7 +70,7 @@ export async function GET() {
         if (cData?.rates?.EGP) usdRate = cData.rates.EGP;
       }
     } catch (e) {
-      console.error("Currency API fetch error", e);
+      // إخفاء تحذير الـ Prerender أثناء عملية الـ Build
     }
 
     const worldGram24 = validNumber(world.gram)
@@ -77,16 +79,18 @@ export async function GET() {
       ? world.price / TROY_OUNCE_GRAMS
       : 3542;
 
-    // حساب سعر الأونصة بالدولار الأمريكي بشكل صحيح (سعر جرام 24 عالمياً * 31.1035 / سعر الدولار)
     const rawOunceEgp = worldGram24 * TROY_OUNCE_GRAMS;
-    const calculateOunceUsd = validNumber(rawOunceEgp) && usdRate > 0
-      ? Number((rawOunceEgp / usdRate).toFixed(2))
-      : 2650.5;
+    const calculateOunceUsd =
+      validNumber(rawOunceEgp) && usdRate > 0
+        ? Number((rawOunceEgp / usdRate).toFixed(2))
+        : 2650.5;
 
     const formatKarat = (data: GoldApiResponse) => ({
       price: data.gram ?? 3100,
-      buy: validNumber(data.gramBuy) ? data.gramBuy : Math.round((data.gram ?? 3100) * 0.995),
-      sell: validNumber(data.gramSell) ? data.gramSell : (data.gram ?? 3100),
+      buy: validNumber(data.gramBuy)
+        ? data.gramBuy
+        : Math.round((data.gram ?? 3100) * 0.995),
+      sell: validNumber(data.gramSell) ? data.gramSell : data.gram ?? 3100,
       updatedAt: data.updatedAt ?? null,
     });
 
@@ -104,7 +108,7 @@ export async function GET() {
           gram24: Math.round(worldGram24),
           gram21: Math.round(worldGram24 * (21 / 24)),
           gram18: Math.round(worldGram24 * (18 / 24)),
-          ounceUsd: calculateOunceUsd, // سعر الأونصة بالدولار بشكل دقيق
+          ounceUsd: calculateOunceUsd,
           updatedAt: world.updatedAt ?? null,
         },
         egyptMarket: {
@@ -113,8 +117,14 @@ export async function GET() {
           karat18: formatKarat(karat18),
           pound: {
             price: (karat21.gram ?? 3100) * 8,
-            buy: (validNumber(karat21.gramBuy) ? karat21.gramBuy : (karat21.gram ?? 3100) * 0.995) * 8,
-            sell: (validNumber(karat21.gramSell) ? karat21.gramSell : (karat21.gram ?? 3100)) * 8,
+            buy:
+              (validNumber(karat21.gramBuy)
+                ? karat21.gramBuy
+                : (karat21.gram ?? 3100) * 0.995) * 8,
+            sell:
+              (validNumber(karat21.gramSell)
+                ? karat21.gramSell
+                : karat21.gram ?? 3100) * 8,
           },
         },
         currencies: [
@@ -164,11 +174,6 @@ export async function GET() {
       }
     );
   } catch (error) {
-    console.error(
-      "Gold prices API error:",
-      error instanceof Error ? error.message : "Unknown error"
-    );
-
     return NextResponse.json(
       { error: "تعذر تحميل أسعار الذهب حاليًا" },
       { status: 503 }
