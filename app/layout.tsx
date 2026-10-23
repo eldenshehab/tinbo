@@ -24,7 +24,7 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl">
       <head>
-        {<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>}
+        {/* كود ربط وإثبات ملكية AdSense (بإصلاح crossOrigin) */}
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
