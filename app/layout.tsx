@@ -14,6 +14,9 @@ export const metadata: Metadata = {
     "أسعار الذهب في مصر",
     "سعر أونصة الذهب بالدولار",
   ],
+  other: {
+    "google-adsense-account" content="ca-pub-5254909861669174",
+  },
 };
 
 export default function RootLayout({
