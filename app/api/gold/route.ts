@@ -24,7 +24,8 @@ async function getGoldPrice(karat?: number): Promise<GoldApiResponse> {
   try {
     const response = await fetch(url, {
       headers: { "x-api-key": apiKey },
-      cache: "no-store",
+      // تحديث البيانات كحد أقصى مرة كل 5 دقائق (300 ثانية) لتوفير عدد الـ Requests
+      next: { revalidate: 300 },
       signal: AbortSignal.timeout(5000),
     });
 
@@ -34,7 +35,6 @@ async function getGoldPrice(karat?: number): Promise<GoldApiResponse> {
 
     return await response.json();
   } catch (error) {
-    // أسعار احتياطية واقعية ومحدثة تتطابق مع السوق الحالي
     if (karat === 24) return { gram: 7180, gramBuy: 7195, gramSell: 7166 };
     if (karat === 21) return { gram: 6283, gramBuy: 6295, gramSell: 6270 };
     if (karat === 18) return { gram: 5385, gramBuy: 5396, gramSell: 5374 };
@@ -55,12 +55,12 @@ export async function GET() {
       getGoldPrice(18),
     ]);
 
-    let usdRate = 53.91; // سعر صرف واقعي ومحدث للدولار
+    let usdRate = 53.91;
     try {
       const resCurrencies = await fetch(
         "https://open.er-api.com/v6/latest/USD",
         {
-          cache: "no-store",
+          next: { revalidate: 300 },
           signal: AbortSignal.timeout(4000),
         }
       );
@@ -69,7 +69,7 @@ export async function GET() {
         if (cData?.rates?.EGP) usdRate = cData.rates.EGP;
       }
     } catch (e) {
-      // استخدام القيمة الافتراضية للعملات عند تعذر الاتصال
+      // استخدام السعر الاحتياطي
     }
 
     const worldGram24 = validNumber(world.gram)
@@ -89,7 +89,7 @@ export async function GET() {
       buy: validNumber(data.gramBuy)
         ? data.gramBuy
         : Math.round((data.gram ?? 6283) * 1.002),
-      sell: validNumber(data.gramSell) ? data.gramSell : (data.gram ?? 6283) * 0.995,
+      sell: validNumber(data.gramSell) ? data.gramSell : Math.round((data.gram ?? 6283) * 0.995),
       updatedAt: data.updatedAt ?? null,
     });
 
@@ -116,8 +116,8 @@ export async function GET() {
           karat18: formatKarat(karat18),
           pound: {
             price: (karat21.gram ?? 6283) * 8,
-            buy: ((karat21.gramBuy ?? 6295)) * 8,
-            sell: ((karat21.gramSell ?? 6270)) * 8,
+            buy: (karat21.gramBuy ?? 6295) * 8,
+            sell: (karat21.gramSell ?? 6270) * 8,
           },
         },
         currencies: [
@@ -162,7 +162,7 @@ export async function GET() {
       },
       {
         headers: {
-          "Cache-Control": "no-store, max-age=0",
+          "Cache-Control": "s-maxage=300, stale-while-revalidate",
         },
       }
     );
