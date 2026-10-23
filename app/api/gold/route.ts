@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
-
 const BASE_URL = "https://goldtimo.com/api/v1";
 const TROY_OUNCE_GRAMS = 31.1034768;
 
@@ -70,7 +68,7 @@ export async function GET() {
         if (cData?.rates?.EGP) usdRate = cData.rates.EGP;
       }
     } catch (e) {
-      // إخفاء تحذير الـ Prerender أثناء عملية الـ Build
+      // تجاوز أي خطأ مؤقت للعملات
     }
 
     const worldGram24 = validNumber(world.gram)
