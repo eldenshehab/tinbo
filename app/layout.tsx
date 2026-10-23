@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,19 +13,7 @@ export const metadata: Metadata = {
     "سعر عيار 21",
     "أسعار الذهب في مصر",
     "سعر أونصة الذهب بالدولار",
-    "أسعار العملات اليوم",
-    "سعر الدولار اليوم في مصر",
   ],
-  authors: [{ name: "Tinbo Team" }],
-  openGraph: {
-    title: "تينبو | أسعار الذهب والعملات مباشر",
-    description:
-      "تحديث حي ومباشر لأسعار الذهب في الصاغة المصرية والبورصة العالمية وأسعار العملات.",
-    url: "https://tinbo.vercel.app",
-    siteName: "Tinbo",
-    locale: "ar_EG",
-    type: "website",
-  },
 };
 
 export default function RootLayout({
@@ -34,6 +23,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ar" dir="rtl">
+      <head>
+        {<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+      </head>
       <body>{children}</body>
     </html>
   );
